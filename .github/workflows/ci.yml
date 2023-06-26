@@ -1,0 +1,109 @@
+name: Ms-teams+Pytest+Allure
+
+on:
+  push:
+  
+permissions:
+  actions: write 
+  checks: write 
+  contents: write 
+  deployments: write
+  discussions: write 
+  issues: write 
+  packages: write 
+  pages: write 
+  pull-requests: write 
+  repository-projects: write 
+  security-events: write 
+  statuses: write
+  
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Teams-connection
+        uses: ./ms-teams-deploy-card-master
+        if: always()
+        with:
+          github-token: ${{ github.token }}
+          webhook-uri: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
+          card-layout-exit: complete
+          environment: ${{ github.ref }}
+          timezone: Asia/Taipei
+          show-on-start: false
+          custom-actions: |
+            - text: View PR
+              url: "https://github.com/${{ github.repository }}/pulls"
+            - text: View Release
+              url: "https://github.com/${{ github.repository }}/releases"
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      # - name: Setup PDM
+      #   uses: pdm-project/setup-pdm@v3
+      #   id: setup-pdm
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+      #     cache: true
+
+      # - name: Check output
+      #   run: |
+      #     echo ${{ steps.setup-pdm.outputs.pdm-bin }}
+      #     echo ${{ steps.setup-pdm.outputs.pdm-version }}
+      #     echo ${{ steps.setup-pdm.outputs.python-path }}
+      #     echo ${{ steps.setup-pdm.outputs.python-version }}
+
+      # - name: Run Package Dependencies
+      #   run: pdm install -v && pdm info
+      
+      - name: Install software
+        run: sudo apt-get install -y chromium-browser
+
+      - name: Test with pytest
+        if: always()
+        run: |
+          pip install pytest
+          pip install allure-pytest
+          pytest -vv --alluredir=allure-results 
+        continue-on-error: true
+
+      - name: Get Allure history
+        uses: actions/checkout@v2
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Allure Report action from marketplace
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        id: allure-report
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          #allure_report: allure-report
+          allure_history: allure-history
+
+      - name: Deploy report to Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
