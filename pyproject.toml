@@ -14,13 +14,28 @@ disable = ["missing-module-docstring"]
 [tool.pylint.'MASTER']
 ignore-patterns = ["^test.+"]
 
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "semver"
+version = "0.0.1"
+update_changelog_on_bump = true
+major_version_zero = true
 [project]
 name = ""
 version = ""
 description = ""
 authors = [
-    {name = "", email = ""},
+    {name = "MarlonOu", email = "jj80868588@gmail.com"},
 ]
-dependencies = []
-requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.98.0",
+    "uvicorn>=0.22.0",
+    "sqlalchemy>=2.0.17",
+    "mysql-connector-python>=8.0.33",
+    "python-dotenv>=1.0.0",
+    "python-jose>=3.3.0",
+]
+requires-python = ">=3.11"
 license = {text = "MIT"}
