@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String
 import sys
 
-sys.path.append("..")
 from database.database import Base
 
 

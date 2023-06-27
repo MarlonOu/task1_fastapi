@@ -14,7 +14,7 @@ movies = APIRouter(prefix="/api/movies", tags=["addition"])
 @movies.post("/", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
 def create(request: MovieRequest, db: Session = Depends(get_db)):
     movie = MovieRepository.save(db, Movies(**request.dict()))
-    return MovieResponse.from_orm(movie)
+    return MovieResponse.from_orm(movie)  # type: ignore
 
 
 @movies.get("/", response_model=list)
