@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class UserBase(BaseModel):
     name: str
     password: str
-    token: str
+    token: str = None  # type: ignore
     age: int
     sex: str
 

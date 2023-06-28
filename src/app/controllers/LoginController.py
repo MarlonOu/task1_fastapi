@@ -13,17 +13,39 @@
 
 from fastapi import APIRouter, Depends, Body, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWSError, jwt
+
+from database.database import engine, Base, get_db
+from repositories.UserRepository import UserRepository
+from schemas.UserSchema import UserRequest, UserResponse
+from models.User import User
 
 SECRET_KEY = "ed970259a19edfedf1010199c7002d183bd15bcaec612481b29bac1cb83d8137"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-def get_user_id(user_name: str, password: str):
-    return 123
+def get_user_id(user_name: str, password: str, user: list):
+    for u in user:
+        if UserResponse.from_orm(u).name == user_name:
+            if UserResponse.from_orm(u).password == password:
+                return UserResponse.from_orm(u).id
+    return 0
+
+
+def update_user_token(id: int, token: str, db: Session):
+    if not UserRepository.exists_by_id(db, id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
+        )
+    try:
+        UserRepository.save(db, User(id=id, token=token))
+        return True
+    except:
+        return False
 
 
 def create_jwt_token(data: dict, expire_delta: Optional[timedelta] = None):
@@ -41,12 +63,12 @@ def create_jwt_token(data: dict, expire_delta: Optional[timedelta] = None):
     return token
 
 
-login = APIRouter(prefix="/api/login", tags=["addition"])
+login = APIRouter(prefix="/api", tags=["addition"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="123")
 
 
-@login.post("/")
-# 不同從API取值的方式 postman form-data or x-xxx-form-urlencoded
+@login.post("/login")
+# 不同從API輸入取值的方式 postman form-data or x-xxx-form-urlencoded
 # async def get_token(user_name: str = Form(...), password: str = Form(...)):
 #     user_id = get_user_id(user_name, password)
 #     data = {"user_id": user_id}
@@ -54,15 +76,25 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="123")
 #     return {"token": token}
 
 
-async def get_token(form_data: OAuth2PasswordRequestForm = Depends()):
+def get_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     # 驗證登入資訊
-    user_id = get_user_id(form_data.username, form_data.password)
-    data = {"user_id": user_id}
-    token = create_jwt_token(data)
-    return {"token": token}
+
+    user = UserRepository.find_all(db)
+    user_id = get_user_id(form_data.username, form_data.password, user)
+    if not user_id:
+        return "incorrect username or password"
+    else:
+        data = {"user_id": user_id, "username": form_data.username}
+        token = create_jwt_token(data)
+        if update_user_token(user_id, token, db):
+            return {"token": token}
+        else:
+            return "update token fail"
 
 
-@login.get("/")
+@login.get("/login")
 async def verify_token(token: str = Depends(oauth2_scheme)):
     # 定義一個異常返回
     credentials_exception = HTTPException(

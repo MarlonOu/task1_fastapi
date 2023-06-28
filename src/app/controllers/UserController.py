@@ -28,7 +28,7 @@ def find_by_id(id: int, db: Session = Depends(get_db)):
     user = UserRepository.find_by_id(db, id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="movie not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
         )
     return UserResponse.from_orm(user)
 
@@ -37,7 +37,7 @@ def find_by_id(id: int, db: Session = Depends(get_db)):
 def delete_by_id(id: int, db: Session = Depends(get_db)):
     if not UserRepository.exists_by_id(db, id):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="movie not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
         )
     UserRepository.delete_by_id(db, id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -47,7 +47,7 @@ def delete_by_id(id: int, db: Session = Depends(get_db)):
 def update(id: int, request: UserRequest, db: Session = Depends(get_db)):
     if not UserRepository.exists_by_id(db, id):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="movie not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
         )
     user = UserRepository.save(db, User(id=id, **request.dict()))
     return UserResponse.from_orm(user)
