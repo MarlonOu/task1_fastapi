@@ -107,9 +107,9 @@ async def verify_token(token: str = Depends(oauth2_scheme)):
     # 驗證token
     try:
         payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"paload: {payload}")
+        # print(f"paload: {payload}")
         user_id = payload.get("user_id")
-        print(f"user_id: {user_id}")
+        # print(f"user_id: {user_id}")
         if not user_id:
             raise credentials_exception
     except JWSError as e:
